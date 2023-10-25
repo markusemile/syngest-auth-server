@@ -18,7 +18,10 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+
+import javax.sql.DataSource;
 
 
 @Configuration
@@ -51,8 +54,12 @@ public class SecurityConfig {
                 ;
     }
 
-
     @Bean
+    public JdbcUserDetailsManager jdbcUserDetailsManager(DataSource dataSource){
+        return new JdbcUserDetailsManager(dataSource);
+    }
+
+    //@Bean
     public UserDetailsService inMemoryUserDetailsManager(){
         var user1 = User.withUsername("laura").password(passwordEncoder.encode("1234")).authorities("USER").build();
         var user2 = User.withUsername("emile").password(passwordEncoder.encode("1234")).authorities("ADMIN").build();
