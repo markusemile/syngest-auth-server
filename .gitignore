@@ -33,4 +33,9 @@ build/
 ### VS Code ###
 .vscode/
 .gitignore
-.properties
+
+
+### file and folder ####
+/src/main/resources/certs/
+/src/main/resources/application.properties
+
