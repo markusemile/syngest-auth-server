@@ -61,6 +61,11 @@
             <artifactId>bcprov-jdk18on</artifactId>
             <version>1.75</version>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

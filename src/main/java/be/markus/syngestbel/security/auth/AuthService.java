@@ -1,6 +1,8 @@
 package be.markus.syngestbel.security.auth;
 ;
 import be.markus.syngestbel.security.config.JwtService;
+import be.markus.syngestbel.security.entity.User;
+import be.markus.syngestbel.security.service.user.UserServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,14 +18,12 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Service;
 
-import java.security.Key;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 
 @Service
@@ -34,37 +34,39 @@ public class AuthService {
     private final JwtDecoder jwtDecoder;
     private final JwtEncoder jwtEncoder;
     private final AuthenticationManager authenticationManager;
-    private final UserDetailsService userDetailsService;
+    private final   UserDetailsService userDetailsService;
+    private final UserServiceImpl userService;
     private final String racine;
     private static final Logger errorLogger = LoggerFactory.getLogger("errorLogger");
+
 
     @Autowired
     public AuthService(JwtService jwtService,
                        JwtDecoder jwtDecoder,
                        JwtEncoder jwtEncoder,
                        AuthenticationManager authenticationManager,
-                       UserDetailsService userDetailsService) {
+                       UserDetailsService userDetailsService,
+                       UserServiceImpl userService) {
         this.jwtService = jwtService;
         this.jwtDecoder = jwtDecoder;
         this.jwtEncoder = jwtEncoder;
         this.authenticationManager = authenticationManager;
         this.userDetailsService = userDetailsService;
         this.racine = getClass().getSimpleName();
+        this.userService=userService;
     }
 
     public Map<String,Object> authentification(AuthRecord authRecord){
 
         Map<String,Object> response = new HashMap<>();
-
         Map<String,String> matchAuth= new HashMap<>();
         Map<String,String> tokens = new HashMap<>();
 
         if(authRecord.grantType().equals("password")){
+
             try {
                 matchAuth = getSubjectAndScope(authRecord.username(), authRecord.password());
                 response.putAll(matchAuth);
-                System.out.println(matchAuth.toString());
-
             } catch (Exception e) {
                 throw  new RuntimeException(e.getMessage());
             }
@@ -78,7 +80,8 @@ public class AuthService {
             throw new RuntimeException("You must to define grantType");
         }
 
-        if(matchAuth!= null && matchAuth.size()==2){
+        System.out.println(matchAuth.size());
+        if(matchAuth!= null && matchAuth.size()>=2){
             try {
                 tokens = this.getTokens(matchAuth,authRecord.withRefreshToken());
                 response.putAll(tokens);
@@ -89,6 +92,7 @@ public class AuthService {
         }else{
             throw new RuntimeException("Can't find subject and/or scope of user");
         }
+
     }
 
 
@@ -97,11 +101,10 @@ public class AuthService {
         Authentication auth=null;
         String subject = null;
         String scope = null;
-
         try {
             auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username,password));
         } catch (AuthenticationException e) {
-            throw new RuntimeException("User was not found");
+            throw new RuntimeException(e);
         }
         try{
             subject = auth.getName();
@@ -109,10 +112,18 @@ public class AuthService {
         }catch(Exception e){
             throw new RuntimeException("Not possible to find the name of user");
         }
+        User currentUser=null;
+        System.out.println(auth.getName());
         try{
-            scope=auth.getAuthorities()
-                    .stream().map(GrantedAuthority::getAuthority).collect(Collectors.joining(" "));
-            result.put("scope",scope);
+            currentUser = this.userService.getUserByEmail(auth.getName());
+
+            if(currentUser==null){
+                throw new RuntimeException("Current user not found !");
+            }
+
+//            scope=auth.getAuthorities()
+//                    .stream().map(GrantedAuthority::getAuthority).collect(Collectors.joining(" "));
+            result.put("scope",currentUser.getGroup().getName());
         }catch(Exception e){
             throw new RuntimeException("Authorities was not found");
         }
@@ -155,6 +166,7 @@ public class AuthService {
         Collection<? extends GrantedAuthority> authorities = null;
         try {
             authorities = u.getAuthorities();
+
         } catch (Exception e) {
             throw new RuntimeException("Error : Cant' find authorities of user "+subject);
         }

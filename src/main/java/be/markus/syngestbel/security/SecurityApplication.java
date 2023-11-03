@@ -1,6 +1,7 @@
 package be.markus.syngestbel.security;
 
 import be.markus.syngestbel.security.config.ssl.RsaKeysConfig;
+import com.nimbusds.jose.crypto.PasswordBasedDecrypter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
