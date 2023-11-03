@@ -15,4 +15,5 @@ This is the Oauth server for the app **SynGesBel** ( real estate syndicate manag
 # Security
 
 Encryption is carried out via an SSL key
+
 Password is encoded with Bcrypt
